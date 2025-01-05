@@ -1,4 +1,3 @@
-<!---Archivo Home.php-->
 <?php 
 class Home extends Controller
 {

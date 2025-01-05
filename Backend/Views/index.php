@@ -29,13 +29,18 @@
                                                 <input class="form-control" id="inputPassword" type="password" name="pass" placeholder="Contraseña" />
                                                 <label for="inputPassword">Contraseña</label>
                                             </div>
+
+                                            <div class="alert alert-primary text-center d-none" id="alerta" role="alert">
+                                            </div>
+
                                             <div class="form-check mb-3">
                                                 <input class="form-check-input" id="inputRememberPassword" type="checkbox" value="" />
                                                 <label class="form-check-label" for="inputRememberPassword">Recordar Contraseña</label>
                                             </div>
+
                                             <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
                                                 <a class="small" href="password.html">Olvidaste la Contraseña?</a>
-                                                
+
                                                 <button  class="btn btn-primary" type="Submit" onclick="frmLogin(event);">Inicia sesión</button>
                                             </div>
                                         </form>

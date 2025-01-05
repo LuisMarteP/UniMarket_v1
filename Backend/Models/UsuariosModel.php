@@ -16,5 +16,16 @@ class UsuariosModel extends Query {
         $data = $stmt->fetch(PDO::FETCH_ASSOC);
         return $data;
     }
+    public function getRol() {
+        $sql = "SELECT * FROM roles";
+        $data = $this->selectAll($sql);
+        return $data;
+    }
+    public function getUsuarios() {
+        $sql = "CALL CargarUsuarios()";
+        $data = $this->selectAll($sql);
+        return $data;
+    }
+     
 }
 ?>
