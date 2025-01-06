@@ -4,8 +4,9 @@
         <meta charset="utf-8" />
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-        <meta name="description" content="" />
-        <meta name="author" content="" />
+        <meta name="description" content="panel administración, configuración, gestión" />
+        <meta name="author" content="UniMarket" />
+
         <title>Panel de Administración</title> 
         <link href="<?php echo base_url;?>Backend/Assets/css/style.min.css" rel="stylesheet" />
         <link href="<?php echo base_url;?>Backend/Assets/css/styles.css" rel="stylesheet" />
