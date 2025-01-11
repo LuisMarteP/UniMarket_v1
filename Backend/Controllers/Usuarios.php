@@ -2,6 +2,10 @@
 class Usuarios extends Controller
 {
 
+    const ESTATUS_ACTIVO = 1;
+    const RECIBIR_NOTIFICACIONES = 2;
+    const ACEPTA_TERMINOS = 1;
+
     public function __construct()
     {
         session_start();
@@ -22,9 +26,10 @@ class Usuarios extends Controller
         for ($i = 0; $i < count($data); $i++) {
 
             $data[$i]['acciones'] = '<div>
-             <button class="btn btn-primary" type="button" onclick="btnEditUser(' . $data[$i]['ID_Usuario'] . ');"><i class="fas fa-edit"></i></button> 
+             <button class="btn btn-primary" type="button" onclick="btnEditUser(' . $data[$i]['ID_Usuario'] . ');">
+             <i class="fas fa-edit"></i></button> 
              </div>';
-             $data[$i]['acciones1'] = '<div>
+            $data[$i]['acciones1'] = '<div>
              <button class="btn btn-danger" type="button" onclick="btnDeleteUser(' . $data[$i]['ID_Usuario'] . ');">
              <i class="fas fa-trash-alt"></i></button>
              </div>';
@@ -41,72 +46,85 @@ class Usuarios extends Controller
             echo json_encode(["status" => "error", "message" => "Método no permitido."]);
             exit;
         }
-    
+
         $email = filter_var($_POST['email'], FILTER_VALIDATE_EMAIL);
         $pass = $_POST['pass'];
-    
+
         if (!$email || empty($pass)) {
             echo json_encode(["status" => "error", "message" => "Por favor, completa todos los campos."]);
             exit;
         }
-    
+
         $data = $this->model->getUsuario($email);
-    
-        if ($data && password_verify($pass, $data['Contraseña'])) {
-            $_SESSION['Id'] = $data['ID_Usuario'];
-            $_SESSION['Rol'] = $data['ID_Rol_Usu'];
-            $_SESSION['Nombre'] = $data['Nombre_Usu'];
-            echo json_encode(["status" => "success", "message" => "ok"]);
+
+        if ($data) {
+            if (password_verify($pass, $data['Contraseña_Usu'])) {
+                $_SESSION['Id'] = $data['ID_Usuario'];
+                $_SESSION['Rol'] = $data['ID_Rol_Usu'];
+                $_SESSION['Nombre'] = $data['Nombre_Usu'];
+                echo json_encode(["status" => "success", "message" => "ok"]);
+            } else {
+                echo json_encode(["status" => "error", "message" => "Contraseña incorrecta."]);
+            }
         } else {
-            echo json_encode(["status" => "error", "message" => "Usuario o Contraseña incorrecta."]);
+            echo json_encode(["status" => "error", "message" => "Usuario no encontrado."]);
         }
+
+
         exit;
     }
-    
 
     public function registrar()
     {
-        $id = filter_var($_POST['id'], FILTER_SANITIZE_NUMBER_INT);
-        $rol = filter_var($_POST['Rol'], FILTER_SANITIZE_NUMBER_INT);
-        $nombre = filter_var($_POST['Nombre']);
-        $apellido = filter_var($_POST['Apellido']);
-        $correo = filter_var($_POST['Correo'], FILTER_SANITIZE_EMAIL);
-        $telefono = filter_var($_POST['Telefono'], FILTER_SANITIZE_NUMBER_INT);
-        $contraseña = $_POST['Contraseña'];
-        $confContraseña = $_POST['ConfContraseña'];
-        $estatus = '1';
-        $notificaciones = '2';
-        $terminos = '1';
+        try {
 
-        if (empty($rol) || empty($nombre) || empty($apellido) || empty($correo) || empty($telefono)) {
-            $msg = array("status" => "error", "message" => "Llenar todos los campos");
-        } else {
-            if ($id == "") {
-                if ($contraseña != $confContraseña) {
-                    $msg = array("La contraseña no coinciden");
+            $id = filter_var($_POST['id'], FILTER_SANITIZE_NUMBER_INT);
+            $rol = filter_var($_POST['Rol'], FILTER_SANITIZE_NUMBER_INT);
+            $nombre = filter_var($_POST['Nombre'], FILTER_SANITIZE_STRING);
+            $apellido = filter_var($_POST['Apellido'], FILTER_SANITIZE_STRING);
+            $correo = filter_var($_POST['Correo'], FILTER_SANITIZE_EMAIL);
+            $telefono = filter_var($_POST['Telefono'], FILTER_SANITIZE_NUMBER_INT);
+            $contraseña = $_POST['Contraseña'];
+            $confContraseña = $_POST['ConfContraseña'];
+
+            $estatus = self::ESTATUS_ACTIVO;
+            $notificaciones = self::RECIBIR_NOTIFICACIONES;
+            $terminos = self::ACEPTA_TERMINOS;
+
+            // Validar campos obligatorios
+            if (empty($rol) || empty($nombre) || empty($apellido) || empty($correo) || empty($telefono) || empty($contraseña) || empty($confContraseña)) {
+                throw new Exception("Llenar todos los campos");
+            }
+
+            // Registrar nuevo usuario
+            if (empty($id)) {
+                if ($contraseña !== $confContraseña) {
+                    throw new Exception("Las contraseñas no coinciden");
                 }
-                $contraseña_hash = password_hash($contraseña, PASSWORD_DEFAULT); //Cifrar la contraseña
+
+                $contraseña_hash = password_hash($contraseña, PASSWORD_DEFAULT);
                 $data = $this->model->RegistrarUser($rol, $estatus, $nombre, $apellido, $correo, $telefono, $contraseña_hash, $notificaciones, $terminos);
-                if ($data == "ok") {
+
+                if ($data === "ok") {
                     $msg = array("status" => "success", "message" => "Usuario registrado con éxito");
+                } elseif ($data === "email_exists") {
+                    throw new Exception("El correo ya está en uso");
                 } else {
-                    $msg = array("status" => "error", "message" => "Error en el registro del usuario");
-                }
-            } else {
-                $data = $this->model->modificarUsuario($rol, $estatus, $nombre, $apellido, $correo, $telefono, $id);
-                if ($data == "ok") {
-                    $msg = array("status" => "success", "message" => "Usuario registrado con éxito");
-                } else {
-                    $msg = array("status" => "error", "message" => "Error en el registro del usuario");
+                    throw new Exception("Error al registrar el usuario");
                 }
             }
+        } catch (Exception $e) {
+            $msg = array("status" => "error", "message" => $e->getMessage());
         }
+
         echo json_encode($msg, JSON_UNESCAPED_UNICODE);
         die();
     }
 
+
     // Inhabilitar usuario
-    public function inhabilitar() {
+    public function inhabilitar()
+    {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = $_POST['ID_Usuario'];
             $resultado = $this->model->inhabilitarUsuario($id);
@@ -114,43 +132,54 @@ class Usuarios extends Controller
         }
         exit;
     }
-    
 
     //cargar el usuario a editar(Funcion necesaria para conectar la funcion.js"btnEditUser" con el usuariosModel"editarUsu" ))
-    public function editar(int $id) 
+    public function editar(int $id)
     {
-       $dataeditar = $this->model->editarUsu($id);
-       echo json_encode($dataeditar,JSON_UNESCAPED_UNICODE);
-       die;
+        try {
+            $dataeditar = $this->model->editarUsu($id); //cargar los datos del usuario al form
+
+            if (!$dataeditar) {
+                throw new Exception("No se encontró el usuario con ID proporcionado");
+            }
+
+            echo json_encode($dataeditar, JSON_UNESCAPED_UNICODE);
+        } catch (Exception $e) {
+            $msg = array("status" => "error", "message" => $e->getMessage());
+            echo json_encode($msg, JSON_UNESCAPED_UNICODE);
+        }
+        die();
     }
 
     public function editarUser()
     {
-        $id = filter_var($_POST['id'], FILTER_SANITIZE_NUMBER_INT);
-        $rol = filter_var($_POST['Rol'], FILTER_SANITIZE_NUMBER_INT);
-        $nombre = filter_var($_POST['Nombre']);
-        $apellido = filter_var($_POST['Apellido']);
-        $correo = filter_var($_POST['Correo'], FILTER_SANITIZE_EMAIL);
-        $telefono = filter_var($_POST['Telefono'], FILTER_SANITIZE_NUMBER_INT);
-        $estatus = filter_var($_POST['Estatus'], FILTER_SANITIZE_NUMBER_INT);
-    
-        $campos = [$id, $rol, $nombre, $apellido, $correo, $telefono, $estatus];
-if (in_array("", $campos, true)) {
-    $msg = array("status" => "error", "message" => "Llenar todos los campos");
-    echo json_encode($msg, JSON_UNESCAPED_UNICODE);
-    die();
-} else {
+        try {
+            
+            $nombre = filter_var($_POST['p_Nombre_Usu'], FILTER_SANITIZE_STRING);
+            $apellido = filter_var($_POST['p_Apellido_Us'], FILTER_SANITIZE_STRING);
+            $correo = filter_var($_POST['p_Correo_Usu'], FILTER_SANITIZE_EMAIL);
+            $telefono = filter_var($_POST['p_Telefono_Usu'], FILTER_SANITIZE_NUMBER_INT);
+            $estatus = filter_var($_POST['p_ID_Estatus'], FILTER_SANITIZE_NUMBER_INT);
+            $rol = filter_var($_POST['p_ID_Rol_Usu'], FILTER_SANITIZE_NUMBER_INT);
+            $id = filter_var($_POST['p_ID_Usuario'], FILTER_SANITIZE_NUMBER_INT);
+
+            // Validación de campos
+            if (empty($nombre) || empty($apellido) || empty($correo) || empty($telefono) || empty($estatus || empty($rol) || empty($id) )) {
+                throw new Exception("Todos los campos son obligatorios");
+            }
+
             $data = $this->model->EditarUsuario($id, $nombre, $apellido, $correo, $telefono, $estatus, $rol);
-            if ($data == "ok") {
+
+            if ($data === "ok") {
                 $msg = array("status" => "success", "message" => "Usuario editado con éxito");
             } else {
-                $msg = array("status" => "error", "message" => "Error al editar el usuario");
+                throw new Exception("Error al editar el usuario");
             }
+        } catch (Exception $e) {
+            $msg = array("status" => "error", "message" => $e->getMessage());
         }
+        
         echo json_encode($msg, JSON_UNESCAPED_UNICODE);
         die();
     }
-    
-
-   
 }

@@ -24,7 +24,7 @@ public function selectAll(string $sql)
         return $data;
     } catch (PDOException $e) {
         // Captura errores y retorna un mensaje útil
-        return ["error" => $e->getMessage()];
+        return ["status" => "error", "message" => $e->getMessage()];
     }
 }
 

@@ -1,37 +1,47 @@
-document.addEventListener("DOMContentLoaded", function () {
-    const tblUsuarios = document.querySelector("#tblUsuarios");
+let tblUsuarios;
 
-    if (tblUsuarios) {
+document.addEventListener("DOMContentLoaded", function () {
+    inicializarTablaUsuarios();
+});
+
+function inicializarTablaUsuarios() {
+    const tblUsuariosElement = document.querySelector("#tblUsuarios");
+
+    if (tblUsuariosElement) {
         fetch(base_url + "Usuarios/listar")
             .then(response => response.json())
             .then(data => {
-                const tableBody = tblUsuarios.querySelector("tbody");
+                if (typeof tblUsuarios !== 'undefined') {
+                    tblUsuarios.destroy(); // Destruir la tabla si ya está inicializada
+                }
+
+                tblUsuariosElement.querySelector("tbody").innerHTML = ""; // Limpiar contenido
+
                 data.forEach(usuario => {
                     const row = `
-    <tr>
-        <td>${usuario.ID_Usuario}</td>
-        <td>${usuario.nombre_rol}</td>
-        <td>${usuario.nombre_est}</td>
-        <td>${usuario.Nombre_Usu}</td>
-        <td>${usuario.Apellido_Usu}</td>
-        <td>${usuario.Correo_Usu}</td>
-        <td>${usuario.Telefono_Usu}</td>
-        <td>${usuario.Fecha_Registro_Usu}</td>
-        <td>${usuario.recibir_notificaciones}</td>
-        <td>${usuario.acepto_terminos}</td>
-        <td>${usuario.acciones}</td>
-        <td>${usuario.acciones1}</td>
-    </tr>`;
-tableBody.innerHTML += row;
-
+                        <tr>
+                            <td>${usuario.ID_Usuario}</td>
+                            <td>${usuario.nombre_rol}</td>
+                            <td>${usuario.nombre_est}</td>
+                            <td>${usuario.Nombre_Usu}</td>
+                            <td>${usuario.Apellido_Usu}</td>
+                            <td>${usuario.Correo_Usu}</td>
+                            <td>${usuario.Telefono_Usu}</td>
+                            <td>${usuario.Fecha_Registro_Usu}</td>
+                            <td>${usuario.recibir_notificaciones}</td>
+                            <td>${usuario.acepto_terminos}</td>
+                            <td>${usuario.acciones}</td>
+                            <td>${usuario.acciones1}</td>
+                        </tr>`;
+                    tblUsuariosElement.querySelector("tbody").innerHTML += row;
                 });
 
-                // Inicializar tabla
-                new simpleDatatables.DataTable(tblUsuarios);
+                // Inicializar de nuevo la tabla
+                tblUsuarios = new simpleDatatables.DataTable(tblUsuariosElement);
             })
             .catch(error => console.error("Error al cargar los datos:", error));
     }
-});
+}
 
 // Validación del formulario Login
 function frmLogin(e) {
@@ -71,9 +81,9 @@ function frmLogin(e) {
 
 // Mostrar modal de registro
 function frmRegistrar() {
-    document.getElementById("title").innerHTML = "Nuevo Usuario"
+    document.getElementById("title").innerHTML = "Nuevo Usuario";
     document.getElementById("btnAccion").innerHTML = "Registrar";
-    document.getElementById("btnAccion").setAttribute("data-action", "editar");
+    document.getElementById("btnAccion").setAttribute("data-action", "registrar");
     document.getElementById("claves").classList.remove("d-none");
     document.getElementById("Est").disabled = true;
 
@@ -81,86 +91,124 @@ function frmRegistrar() {
     $("#Registrar").modal("show");
 }
 
+function msgConfirmacion() {
+    Swal.fire({
+        position: "top-end",
+        icon: "success",
+        title: "Usuario Registrado",
+        showConfirmButton: false,
+        timer: 1500
+    });
+}
+
 // Validación y registro de usuario
-function RegistrarUser(e) {
+async function RegistrarUser(e) {
     e.preventDefault();
 
-    const rol = document.getElementById("Rol");
-    const nombre = document.getElementById("inputNombre");
-    const apellido = document.getElementById("inputApellido");
-    const correo = document.getElementById("inputCorreo");
-    const telefono = document.getElementById("inputTelefono");
-    const contraseña = document.getElementById("inputContraseña");
-    const confContraseña = document.getElementById("inputConfContraseña");
+    const frm = document.getElementById("frmRegistrar");
     const alerta = document.getElementById("alerta");
 
-    if (
-        rol.value.trim() === "" || nombre.value.trim() === "" ||
-        apellido.value.trim() === "" || correo.value.trim() === "" ||
-        telefono.value.trim() === "" || contraseña.value.trim() === "" ||
-        confContraseña.value.trim() === ""
-    ) {
+    const rol = document.getElementById("Rol").value.trim();
+    const nombre = document.getElementById("inputNombre").value.trim();
+    const apellido = document.getElementById("inputApellido").value.trim();
+    const correo = document.getElementById("inputCorreo").value.trim();
+    const telefono = document.getElementById("inputTelefono").value.trim();
+    const contraseña = document.getElementById("inputContraseña").value.trim();
+    const confContraseña = document.getElementById("inputConfContraseña").value.trim();
+
+    // Validación de campos vacíos
+    if (!rol || !nombre || !apellido || !correo || !telefono || !contraseña || !confContraseña) {
         mostrarAlerta(alerta, "Por favor, completa todos los campos.", "danger");
         return;
     }
 
-    if (contraseña.value.trim() !== confContraseña.value.trim()) {
+    // Validación del correo electrónico
+    if (!esCorreoValido(correo)) {
+        mostrarAlerta(alerta, "Por favor, ingresa un correo electrónico válido.", "danger");
+        return;
+    }
+
+    // Validación de contraseñas
+    if (contraseña !== confContraseña) {
         mostrarAlerta(alerta, "Las contraseñas no coinciden.", "danger");
         return;
     }
 
-    const url = base_url + "Usuarios/registrar";
-    const frm = document.getElementById("frmRegistrar");
-    const http = new XMLHttpRequest();
+    try {
+        const response = await fetch(base_url + "Usuarios/registrar", {
+            method: "POST",
+            body: new FormData(frm),
+        });
 
-    http.open("POST", url, true);
-    http.send(new FormData(frm));
+        const res = await response.json();
 
-    http.onreadystatechange = function () {
-        if (this.readyState === 4 && this.status === 200) {
-            try {
-                const res = JSON.parse(this.responseText);
-
-                // Si el registro fue exitoso
-                if (res.status === "success") {
-                    Swal.fire({
-                        icon: "success",
-                        title: "¡Éxito!",
-                        text: "Usuario registrado con éxito.",
-                        showConfirmButton: false,
-                        timer: 1500,
-                    });
-
-                    // Limpiar el formulario
-                    frm.reset();
-                } else {
-                    // Si ocurrió un error
-                    Swal.fire({
-                        icon: "error",
-                        title: "Error",
-                        text: res.message,
-                    });
-                }
-            } catch (error) {
-                console.error("Error al procesar la respuesta del servidor:", error);
-
-                // Mostrar alerta de error
-                Swal.fire({
-                    icon: "error",
-                    title: "Error inesperado",
-                    text: "Hubo un problema al procesar la solicitud. Intenta nuevamente.",
-                });
-            }
+        if (res.status === "success") {
+            Swal.fire({
+                icon: "success",
+                title: "¡Éxito!",
+                text: "Usuario registrado con éxito.",
+                showConfirmButton: false,
+                timer: 1500,
+            });
+            inicializarTablaUsuarios();
+            frm.reset();
+            $("#Registrar").modal("hide");
+        } else {
+            mostrarAlerta(alerta, res.message || "Ocurrió un problema.", "danger");
         }
-    };
+    } catch (error) {
+        console.error("Error en la solicitud:", error);
+        Swal.fire({
+            icon: "error",
+            title: "Error inesperado",
+            text: "Ocurrió un problema al procesar la solicitud.",
+        });
+    }
 }
 
-// Función para mostrar alertas
-function mostrarAlerta(elemento, mensaje, tipo) {
-    elemento.classList.remove("d-none");
-    elemento.classList.add(`alert-${tipo}`);
+function esCorreoValido(correo) {
+    // Expresión regular para validar un correo electrónico
+    const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regexCorreo.test(correo);
+}
+ 
+function mostrarAlerta(elemento, mensaje, tipo, duracion = 3000) {
+    if (!elemento) {
+        console.error("Elemento no encontrado para mostrar alerta.");
+        return;
+    }
 
-    elemento.innerHTML = mensaje;
+    // Limpia temporizador anterior si existe
+    if (elemento.timerId) {
+        clearTimeout(elemento.timerId);
+    }
+
+    // Asegúrate de que la alerta esté visible y actualiza su contenido
+    elemento.style.display = "block";
+    elemento.style.opacity = "1"; // Asegura que sea visible inmediatamente
+    elemento.className = `alert alert-${tipo}`; // Actualiza las clases
+    elemento.innerHTML = mensaje; // Inserta el mensaje
+
+    // Inicia un nuevo temporizador para ocultar la alerta
+    elemento.timerId = setTimeout(() => {
+        limpiarAlerta(elemento);
+        delete elemento.timerId;
+    }, duracion);
+}
+
+function limpiarAlerta(elemento) {
+    if (!elemento) {
+        console.error("Elemento no encontrado para limpiar alerta.");
+        return;
+    }
+
+    // Oculta con una transición
+    elemento.style.opacity = "0";
+    setTimeout(() => {
+        elemento.style.display = "none";
+        elemento.className = ""; // Limpia todas las clases
+        elemento.innerHTML = ""; // Limpia el contenido
+    }, 500); // Ajusta al tiempo de transición (si usas CSS)
 }
 
 // Función para habilitar la edición al cargar un usuario
@@ -199,7 +247,7 @@ function inhabilitarUsuario(id) {
         }
     });
 }
-
+// Boton para usar la funcion deshabilitar una cuenta
 function btnDeleteUser(id) {
     Swal.fire({
         title: "¿Estás seguro?",
@@ -254,7 +302,6 @@ function btnDeleteUser(id) {
     });
 }
 
-
 function btnEditUser(id) {
     document.getElementById("title").innerHTML = "Editar Usuario";
     document.getElementById("btnAccion").innerHTML = "Editar"; 
@@ -268,124 +315,65 @@ function btnEditUser(id) {
         if (this.readyState == 4 && this.status == 200) {
             console.log(this.responseText);
             const res = JSON.parse(this.responseText);
-            document.getElementById("id").value = res.ID_Usuario;
-            document.getElementById("Rol").value = res.ID_Rol_Usu;
-            document.getElementById("Est").value = res.ID_Estatus;
-            document.getElementById("inputNombre").value = res.Nombre_Usu;
-            document.getElementById("inputApellido").value = res.Apellido_Usu;
-            document.getElementById("inputCorreo").value = res.Correo_Usu;
-            document.getElementById("inputTelefono").value = res.Telefono_Usu;
-            document.getElementById("claves").classList.add("d-none");
-            $("#Registrar").modal("show")
+            document.getElementById("id").value = res.ID_Usuario; //cargar el id en el input oculto en el form
+            document.getElementById("Rol").value = res.ID_Rol_Usu; //cargar el rol en el select rol
+            document.getElementById("Est").value = res.ID_Estatus; //cargar el rol en el select estatus
+            document.getElementById("inputNombre").value = res.Nombre_Usu; //cargar el nombre en el inputNombre en el form
+            document.getElementById("inputApellido").value = res.Apellido_Usu; //cargar el Apellido en el inputApellido en el form
+            document.getElementById("inputCorreo").value = res.Correo_Usu; //cargar el Correo en el inputCorreo en el form
+            document.getElementById("inputTelefono").value = res.Telefono_Usu; //cargar el telefono en el inputTelefono en el form
+            document.getElementById("claves").classList.add("d-none"); //Quitar los campos para la contraseña
+            $("#Registrar").modal("show") // Abrir el form
         }
     };
-    
-    function btnRegistrarNuevo() {
-        document.getElementById("title").innerHTML = "Registrar Nuevo Usuario";
-        document.getElementById("btnAccion").innerHTML = "Registrar";
-        document.getElementById("btnAccion").setAttribute("data-action", "registrar");
-        $("#Registrar").modal("show");
-    }
-    
-    function btnEditUser(id) {
-        document.getElementById("title").innerHTML = "Editar Usuario";
-        document.getElementById("btnAccion").innerHTML = "Editar";
-        document.getElementById("btnAccion").setAttribute("data-action", "editar");
-        document.getElementById("btnAccion").setAttribute("data-id", id);
-    
-        const url = base_url + "Usuarios/editar/" + id;
-        const http = new XMLHttpRequest();
-        http.open("GET", url, true);
-        http.send();
-        http.onreadystatechange = function () {
-            if (this.readyState == 4 && this.status == 200) {
-                const usuario = JSON.parse(this.responseText);
-                document.getElementById("Nombre_Usu").value = usuario.Nombre_Usu;
-                document.getElementById("Apellido_Usu").value = usuario.Apellido_Usu;
-                document.getElementById("Correo_Usu").value = usuario.Correo_Usu;
-                document.getElementById("Telefono_Usu").value = usuario.Telefono_Usu;
-                document.getElementById("ID_Estatus").value = usuario.ID_Estatus;
-                document.getElementById("ID_Rol_Usu").value = usuario.ID_Rol_Usu;
-                document.getElementById("acepto_terminos").value = usuario.acepto_terminos;
-                document.getElementById("recibir_notificaciones").value = usuario.recibir_notificaciones;
-            }
-        };
-        $("#Registrar").modal("show");
-    }
-    
-    function handleAction() {
-        const action = document.getElementById("btnAccion").getAttribute("data-action");
-        if (action === "registrar") {
-            // Lógica para registrar un nuevo usuario
-            registrarUsuario();
-        } else if (action === "editar") {
-            const id = document.getElementById("btnAccion").getAttribute("data-id");
-            // Lógica para editar un usuario existente
-            editarUsuario(id);
-        }
-    }
-    
-    function registrarUsuario() {
-        // Lógica para registrar un nuevo usuario
-        console.log("Registrando nuevo usuario...");
-    }
-    
-    function editarUsuario(id) {
-        // Lógica para editar un usuario existente
-        console.log("Editando usuario con ID:", id);
-    }
-    
-
 }
 
 function handleAction(e) {
     const action = document.getElementById("btnAccion").getAttribute("data-action");
     if (action === "registrar") {
+        //console.log("Registrando");
         RegistrarUser(e);
     } else if (action === "editar") {
+        //console.log("Editando");
         EditarUser(e);
+        
     }
 }
 
 async function EditarUser(e) {
     e.preventDefault();
 
-    const id = document.getElementById("id").value;
-    const rol = document.getElementById("Rol").value;
-    const estatus = document.getElementById("Est").value;
-    const nombre = document.getElementById("inputNombre").value;
-    const apellido = document.getElementById("inputApellido").value;
-    const correo = document.getElementById("inputCorreo").value;
-    const telefono = document.getElementById("inputTelefono").value;
     const alerta = document.getElementById("alerta");
-
-    if (
-        rol.trim() === "" || nombre.trim() === "" ||
-        apellido.trim() === "" || correo.trim() === "" ||
-        telefono.trim() === ""
-    ) {
+    const frm = document.getElementById("frmRegistrar");
+    
+    const id = document.getElementById("id").value.trim();
+    const rol = document.getElementById("Rol").value.trim();
+    const est = document.getElementById("Est").value.trim();
+    const nombre = document.getElementById("inputNombre").value.trim();
+    const apellido = document.getElementById("inputApellido").value.trim();
+    const correo = document.getElementById("inputCorreo").value.trim();
+    const telefono = document.getElementById("inputTelefono").value.trim();
+     
+    // Validación de campos vacíos
+    if ( !id || !rol || !nombre || !apellido || !correo || !telefono || !est ) {
         mostrarAlerta(alerta, "Por favor, completa todos los campos.", "danger");
         return;
     }
 
-    const url = base_url + "Usuarios/editarUser";
-    const frm = document.getElementById("frmRegistrar");
+    // Validación del correo electrónico
+    if (!esCorreoValido(correo)) {
+        mostrarAlerta(alerta, "Por favor, ingresa un correo electrónico válido.", "danger");
+        return;
+    }
 
     try {
-        const formData = new FormData(frm);
-
-        const response = await fetch(url, {
+        const response = await fetch(base_url + "Usuarios/editarUser", { //funcion para guardar los datos a editar
             method: "POST",
-            body: formData,
+            body: new FormData(frm),
         });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
 
         const res = await response.json();
 
-        // Si la edición fue exitosa
         if (res.status === "success") {
             Swal.fire({
                 icon: "success",
@@ -394,25 +382,18 @@ async function EditarUser(e) {
                 showConfirmButton: false,
                 timer: 1500,
             });
-
-            // Limpiar el formulario
+            inicializarTablaUsuarios();
             frm.reset();
+            $("#Registrar").modal("hide");
         } else {
-            // Si ocurrió un error
-            Swal.fire({
-                icon: "error",
-                title: "Error",
-                text: res.message,
-            });
+            mostrarAlerta(alerta, res.message || "Ocurrió un problema.", "danger");
         }
     } catch (error) {
-        console.error("Error al procesar la solicitud:", error);
-
-        // Mostrar alerta de error
+        console.error("Error en la solicitud:", error);
         Swal.fire({
             icon: "error",
             title: "Error inesperado",
-            text: "Hubo un problema al procesar la solicitud. Intenta nuevamente.",
+            text: "Ocurrió un problema al procesar la solicitud.",
         });
     }
 }
