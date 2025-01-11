@@ -14,13 +14,15 @@
                 </footer>
             </div>
         </div> 
-        <script src="<?php echo base_url;?>Backend/Assets/js/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
+        
         <script src="<?php echo base_url;?>Backend/Assets/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
         <script src="<?php echo base_url;?>Backend/Assets/js/scripts.js"></script>
         <!---<script src="<?php echo base_url;?>Backend/Assets/js/Chart.min.js" crossorigin="anonymous"></script>
         <script src="<?php echo base_url;?>Backend/Assets/demo/chart-area-demo.js"></script>
         <script src="<?php echo base_url;?>Backend/Assets/demo/chart-bar-demo.js"></script>---->
         <script src="<?php echo base_url;?>Backend/Assets/js/simple-datatables.min.js" crossorigin="anonymous"></script>
+        <link href="<?php echo base_url;?>Backend/Assets/css/bootstrap.min.css" rel="stylesheet">
+        <script src="<?php echo base_url;?>Backend/Assets/js/jquery-3.5.1.slim.min.js"></script>
 
         <script>
             const base_url = "<?php echo base_url; ?>";

@@ -42,6 +42,50 @@ function inicializarTablaUsuarios() {
             .catch(error => console.error("Error al cargar los datos:", error));
     }
 }
+/* $('#tblUsuarios').DataTable({
+    searching: false, // Desactiva el buscador predeterminado
+    
+});
+ */
+//Recargar la tabla con los ultimos cambios o buscando solo el usuario recien creado
+async function recargarTablaUsuarios() {
+    try {
+        // Llama a la API para obtener los datos actualizados de los usuarios
+        const response = await fetch(base_url + "Usuarios/getUsuarios");
+        const data = await response.json();
+
+        if (data.status === "success") {
+            // Limpiar las filas actuales de la tabla
+            const tabla = document.getElementById("tablaUsuarios").querySelector("tbody");
+            tabla.innerHTML = ""; // Elimina todas las filas actuales
+
+            // Agregar las filas actualizadas a la tabla
+            data.usuarios.forEach((usuario) => {
+                const fila = document.createElement("tr");
+
+                fila.innerHTML = `
+                    <td>${usuario.ID_Usuario}</td>
+                    <td>${usuario.Nombre_Usu}</td>
+                    <td>${usuario.Apellido_Usu}</td>
+                    <td>${usuario.Correo_Usu}</td>
+                    <td>${usuario.Telefono_Usu}</td>
+                    <td>${usuario.Estatus === 1 ? "Activo" : "Inactivo"}</td>
+                    <td>${usuario.Rol}</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm" onclick="editarUsuario(${usuario.ID_Usuario})">Editar</button>
+                        <button class="btn btn-danger btn-sm" onclick="eliminarUsuario(${usuario.ID_Usuario})">Eliminar</button>
+                    </td>
+                `;
+
+                tabla.appendChild(fila);
+            });
+        } else {
+            console.error("Error al obtener los usuarios:", data.message);
+        }
+    } catch (error) {
+        console.error("Error al recargar la tabla de usuarios:", error);
+    }
+}
 
 // Validación del formulario Login
 function frmLogin(e) {
@@ -63,10 +107,14 @@ function frmLogin(e) {
     http.open("POST", url, true);
     http.send(new FormData(frm));
 
-    http.onreadystatechange = function () {
-        if (this.readyState === 4 && this.status === 200) {
+   http.onreadystatechange = function () {
+    if (this.readyState === 4) {
+        if (this.status === 200) {
+            console.log("Respuesta del servidor:", this.responseText);
+
             try {
                 const res = JSON.parse(this.responseText);
+                console.log("Respuesta parseada:", res);
                 if (res.status === "success" && res.message === "ok") {
                     window.location = base_url + "Usuarios";
                 } else {
@@ -74,9 +122,17 @@ function frmLogin(e) {
                 }
             } catch (error) {
                 console.error("Error al procesar la respuesta del servidor:", error);
+                mostrarAlerta(alerta, "Error inesperado. Respuesta inválida del servidor.", "danger");
             }
+        } else {
+            console.error("Error en la solicitud:", this.status, this.responseText);
+            mostrarAlerta(alerta, "Error en el servidor. Por favor, intenta más tarde.", "danger");
         }
-    };
+    }
+};
+
+    
+    
 }
 
 // Mostrar modal de registro
@@ -150,7 +206,7 @@ async function RegistrarUser(e) {
                 showConfirmButton: false,
                 timer: 1500,
             });
-            inicializarTablaUsuarios();
+            recargarTablaUsuarios();
             frm.reset();
             $("#Registrar").modal("hide");
         } else {
@@ -224,7 +280,7 @@ function CargarUsuario(id) {
 function inhabilitarUsuario(id) {
     Swal.fire({
         title: "¿Estás seguro?",
-        text: "¡El usuario será inhabilitado!",
+        text: "¡El usuario no se eliminara, Solo se cambiara su estado a inactivo!",
         icon: "warning",
         showCancelButton: true,
         confirmButtonText: "Sí, inhabilitar",
@@ -279,7 +335,7 @@ function btnDeleteUser(id) {
                                 icon: "success"
                             }).then(() => {
                                 // Aquí puedes agregar la lógica para recargar la tabla de usuarios, por ejemplo:
-                                location.reload(); // Recarga la página para actualizar los datos
+                                recargarTablaUsuarios();
                             });
                         } else {
                             Swal.fire({
@@ -355,7 +411,7 @@ async function EditarUser(e) {
     const telefono = document.getElementById("inputTelefono").value.trim();
      
     // Validación de campos vacíos
-    if ( !id || !rol || !nombre || !apellido || !correo || !telefono || !est ) {
+    if (!nombre || !apellido || !correo || !telefono || !est || !id || !rol || !est ) {
         mostrarAlerta(alerta, "Por favor, completa todos los campos.", "danger");
         return;
     }
@@ -382,7 +438,7 @@ async function EditarUser(e) {
                 showConfirmButton: false,
                 timer: 1500,
             });
-            inicializarTablaUsuarios();
+            recargarTablaUsuarios();
             frm.reset();
             $("#Registrar").modal("hide");
         } else {
@@ -398,3 +454,6 @@ async function EditarUser(e) {
     }
 }
 
+function cerrarModal(modalId) {
+    $(`#${modalId}`).modal('hide');
+}

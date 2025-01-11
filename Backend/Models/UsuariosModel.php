@@ -10,15 +10,26 @@ class UsuariosModel extends Query
         $this->conn = (new Conexion())->conect();
     }
 
-    public function getUsuario(string $email)
+    public function validarUsuario(string $email, string $password)
     {
-        $sql = "SELECT * FROM usuarios WHERE Correo_Usu = ?";
+        $sql = "CALL ValidarUsuario(?, ?, @p_resultado, @p_id_usuario, @p_nombre, @p_rol)";
         $stmt = $this->conn->prepare($sql);
-        $stmt->bindParam(1, $email);
-        $stmt->execute();
-        $data = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $data;
+
+        try {
+            // Ejecutar el procedimiento almacenado
+            $stmt->execute([$email, $password]);
+
+            // Obtener los resultados de las variables OUT
+            $resultQuery = $this->conn->query("SELECT @p_resultado AS resultado, @p_id_usuario AS id_usuario, @p_nombre AS nombre, @p_rol AS rol");
+            $result = $resultQuery->fetch(PDO::FETCH_ASSOC);
+
+            return $result;
+        } catch (PDOException $e) {
+            error_log("Error al validar usuario: " . $e->getMessage());
+            return null;
+        }
     }
+
 
     public function getRol()
     {
@@ -40,7 +51,7 @@ class UsuariosModel extends Query
         return $data;
     }
 
-    public function RegistrarUser(string $rol,string  $estatus,string  $nombre,string  $apellido,string  $correo,string  $telefono,string  $contraseña,string  $notificaciones,string  $terminos)
+    public function RegistrarUser(string $rol, string  $estatus, string  $nombre, string  $apellido, string  $correo, string  $telefono, string  $contraseña, string  $notificaciones, string  $terminos)
     {
         $sql = "CALL RegistrarUsuario(?, ?, ?, ?, ?, ?, ?, ?, ?, @p_resultado)";
         $stmt = $this->conn->prepare($sql);
@@ -87,31 +98,34 @@ class UsuariosModel extends Query
     }
 
     // Funcion para editar el usuario seleccionado(Usando proceso almacenado)
-    public function EditarUsuario(string $nombre,string $apellido,string $correo,string $telefono,string $estatus,string $rol,string $id)
-{
-    $sql = "CALL EditarUsuario(?, ?, ?, ?, ?, ?, ?, @p_resultado)";
-    $stmt = $this->conn->prepare($sql);
+    public function EditarUsuario(string $id, string $nombre, string $apellido, string $correo, string $telefono, string $estatus, string $rol)
+    {
+        // Procedimiento almacenado con el parámetro OUT
+        $sql = "CALL EditarUsuario(?, ?, ?, ?, ?, ?, ?, @p_resultado)";
+        $stmt = $this->conn->prepare($sql);
 
-    // Vincula los parámetros en el mismo orden que en el procedimiento
-    $stmt->bindParam(1, $id, PDO::PARAM_INT);
-    $stmt->bindParam(2, $nombre, PDO::PARAM_STR);
-    $stmt->bindParam(3, $apellido, PDO::PARAM_STR);
-    $stmt->bindParam(4, $correo, PDO::PARAM_STR);
-    $stmt->bindParam(5, $telefono, PDO::PARAM_STR);
-    $stmt->bindParam(6, $estatus, PDO::PARAM_INT);
-    $stmt->bindParam(7, $rol, PDO::PARAM_INT);
+        // Vincular los parámetros en el orden correcto
+        $stmt->bindParam(1, $id, PDO::PARAM_INT);           // ID_Usuario
+        $stmt->bindParam(2, $nombre, PDO::PARAM_STR);       // Nombre_Usu
+        $stmt->bindParam(3, $apellido, PDO::PARAM_STR);     // Apellido_Usu
+        $stmt->bindParam(4, $correo, PDO::PARAM_STR);       // Correo_Usu
+        $stmt->bindParam(5, $telefono, PDO::PARAM_STR);     // Telefono_Usu
+        $stmt->bindParam(6, $estatus, PDO::PARAM_INT);      // ID_Estatus
+        $stmt->bindParam(7, $rol, PDO::PARAM_INT);          // ID_Rol_Usu
 
-    try {
-        $stmt->execute();
+        try {
+            // Ejecutar el procedimiento almacenado
+            $stmt->execute();
 
-        // Obtener el resultado de la variable OUT
-        $resultQuery = $this->conn->query("SELECT @p_resultado AS resultado");
-        $result = $resultQuery->fetch(PDO::FETCH_ASSOC);
+            // Consultar el valor del parámetro OUT
+            $resultQuery = $this->conn->query("SELECT @p_resultado AS resultado");
+            $result = $resultQuery->fetch(PDO::FETCH_ASSOC);
 
-        return $result['resultado'];
-    } catch (PDOException $e) {
-        error_log("Error al editar usuario: " . $e->getMessage());
-        return "error";
+            return $result['resultado']; // Retorna el resultado del procedimiento
+        } catch (PDOException $e) {
+            // Registrar el error en los logs para depuración
+            error_log("Error al editar usuario: " . $e->getMessage());
+            return "error"; // Devuelve un valor genérico en caso de error
+        }
     }
-}
 }

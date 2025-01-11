@@ -6,9 +6,14 @@ class Usuarios extends Controller
     const RECIBIR_NOTIFICACIONES = 2;
     const ACEPTA_TERMINOS = 1;
 
-    public function __construct()
+    private function __construct()
     {
         session_start();
+           //control de inicio de sesion
+          if (empty($_SESSION['activo'])){
+            header("location: ".base_url);
+        }  
+          
         parent::__construct();
     }
 
@@ -42,38 +47,51 @@ class Usuarios extends Controller
     public function validar()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            http_response_code(405); // Método no permitido
+            http_response_code(405);
             echo json_encode(["status" => "error", "message" => "Método no permitido."]);
             exit;
         }
-
+    
         $email = filter_var($_POST['email'], FILTER_VALIDATE_EMAIL);
-        $pass = $_POST['pass'];
-
-        if (!$email || empty($pass)) {
+        $password = $_POST['pass'] ?? '';
+    
+        if (!$email || empty($password)) {
             echo json_encode(["status" => "error", "message" => "Por favor, completa todos los campos."]);
             exit;
         }
-
-        $data = $this->model->getUsuario($email);
-
-        if ($data) {
-            if (password_verify($pass, $data['Contraseña_Usu'])) {
-                $_SESSION['Id'] = $data['ID_Usuario'];
-                $_SESSION['Rol'] = $data['ID_Rol_Usu'];
-                $_SESSION['Nombre'] = $data['Nombre_Usu'];
-                echo json_encode(["status" => "success", "message" => "ok"]);
-            } else {
-                echo json_encode(["status" => "error", "message" => "Contraseña incorrecta."]);
-            }
-        } else {
-            echo json_encode(["status" => "error", "message" => "Usuario no encontrado."]);
+    
+        $data = $this->model->validarUsuario($email, $password);
+    
+        if (!$data) {
+            echo json_encode(["status" => "error", "message" => "Error en el servidor."]);
+            exit;
         }
-
-
+    
+        switch ($data['resultado']) {
+            case 'success':
+                $_SESSION['id'] = $data['id_usuario'];
+                $_SESSION['rol'] = $data['rol'];
+                $_SESSION['nombre'] = $data['nombre'];
+                $_SESSION['activo'] = true;
+                echo json_encode(["status" => "success", "message" => "ok"]);
+                break;
+    
+            case 'user_not_found':
+                echo json_encode(["status" => "error", "message" => "Usuario no encontrado."]);
+                break;
+    
+            case 'wrong_password':
+                echo json_encode(["status" => "error", "message" => "Contraseña incorrecta."]);
+                break;
+    
+            default:
+                echo json_encode(["status" => "error", "message" => "Error inesperado."]);
+                break;
+        }
+    
         exit;
     }
-
+    
     public function registrar()
     {
         try {
@@ -155,13 +173,13 @@ class Usuarios extends Controller
     {
         try {
             
-            $nombre = filter_var($_POST['p_Nombre_Usu'], FILTER_SANITIZE_STRING);
-            $apellido = filter_var($_POST['p_Apellido_Us'], FILTER_SANITIZE_STRING);
-            $correo = filter_var($_POST['p_Correo_Usu'], FILTER_SANITIZE_EMAIL);
-            $telefono = filter_var($_POST['p_Telefono_Usu'], FILTER_SANITIZE_NUMBER_INT);
-            $estatus = filter_var($_POST['p_ID_Estatus'], FILTER_SANITIZE_NUMBER_INT);
-            $rol = filter_var($_POST['p_ID_Rol_Usu'], FILTER_SANITIZE_NUMBER_INT);
-            $id = filter_var($_POST['p_ID_Usuario'], FILTER_SANITIZE_NUMBER_INT);
+            $nombre = filter_var($_POST['Nombre'], FILTER_SANITIZE_STRING);
+            $apellido = filter_var($_POST['Apellido'], FILTER_SANITIZE_STRING);
+            $correo = filter_var($_POST['Correo'], FILTER_SANITIZE_EMAIL);
+            $telefono = filter_var($_POST['Telefono'], FILTER_SANITIZE_NUMBER_INT);
+            $estatus = filter_var($_POST['Est'], FILTER_SANITIZE_NUMBER_INT);
+            $rol = filter_var($_POST['Rol'], FILTER_SANITIZE_NUMBER_INT);
+            $id = filter_var($_POST['id'], FILTER_SANITIZE_NUMBER_INT);
 
             // Validación de campos
             if (empty($nombre) || empty($apellido) || empty($correo) || empty($telefono) || empty($estatus || empty($rol) || empty($id) )) {
@@ -182,4 +200,12 @@ class Usuarios extends Controller
         echo json_encode($msg, JSON_UNESCAPED_UNICODE);
         die();
     }
+    
+    public function salir(){
+        session_destroy();
+    }
+        
+    
+
 }
+?>

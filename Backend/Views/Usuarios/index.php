@@ -4,7 +4,7 @@ include "Backend/Views/Templates/header.php"; ?>
 <ol class="breadcrumb mb-4">
     <li class="breadcrumb-item active">Usuarios</li>
 </ol>
-<button class="btn btn-primary mb-2" type="button" onclick="frmRegistrar();">Registrar</button>
+<button class="btn btn-primary mb-2" type="button" onclick="frmRegistrar();">Agregar <i class="fas fa-plus"></i></button>
 
 <!----------------------------------------------------
                      Tablas
@@ -38,9 +38,9 @@ include "Backend/Views/Templates/header.php"; ?>
 <div id="Registrar" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="my-modal-title" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="title">Registrar Nuevo Usuario</h5>
-                <button class="close" data-dismiss="modal" aria-label="Close">
+            <div class="modal-header bg-primary">
+                <h5 class="modal-title text-white" id="title">Registrar Nuevo Usuario</h5>
+                <button class="close" onclick="cerrarModal('Registrar')" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -121,6 +121,7 @@ include "Backend/Views/Templates/header.php"; ?>
             </div>
 
             <button class="btn btn-primary" type="button" onclick="handleAction(event)" id="btnAccion">Aceptar</button>
+            <button class="btn btn-danger" type="button" onclick="cerrarModal('Registrar')" >Cancelar</button>
             </form>
         </div>
     </div>
