@@ -1,7 +1,10 @@
-let tblUsuarios;
+let tblUsuarios; let tblDirecciones; let tblCategorias;
 
 document.addEventListener("DOMContentLoaded", function () {
     inicializarTablaUsuarios();
+    inicializarTablaDirecciones();
+    inicializarTablaCategorias();
+
 });
 
 function inicializarTablaUsuarios() {
@@ -31,7 +34,6 @@ function inicializarTablaUsuarios() {
                             <td>${usuario.recibir_notificaciones}</td>
                             <td>${usuario.acepto_terminos}</td>
                             <td>${usuario.acciones}</td>
-                            <td>${usuario.acciones1}</td>
                         </tr>`;
                     tblUsuariosElement.querySelector("tbody").innerHTML += row;
                 });
@@ -42,99 +44,84 @@ function inicializarTablaUsuarios() {
             .catch(error => console.error("Error al cargar los datos:", error));
     }
 }
-/* $('#tblUsuarios').DataTable({
-    searching: false, // Desactiva el buscador predeterminado
-    
-});
- */
-//Recargar la tabla con los ultimos cambios o buscando solo el usuario recien creado
-async function recargarTablaUsuarios() {
-    try {
-        // Llama a la API para obtener los datos actualizados de los usuarios
-        const response = await fetch(base_url + "Usuarios/getUsuarios");
-        const data = await response.json();
 
-        if (data.status === "success") {
-            // Limpiar las filas actuales de la tabla
-            const tabla = document.getElementById("tablaUsuarios").querySelector("tbody");
-            tabla.innerHTML = ""; // Elimina todas las filas actuales
+function inicializarTablaDirecciones() {
+    const tblDireccionesElement = document.querySelector("#tblDirecciones");
 
-            // Agregar las filas actualizadas a la tabla
-            data.usuarios.forEach((usuario) => {
-                const fila = document.createElement("tr");
-
-                fila.innerHTML = `
-                    <td>${usuario.ID_Usuario}</td>
-                    <td>${usuario.Nombre_Usu}</td>
-                    <td>${usuario.Apellido_Usu}</td>
-                    <td>${usuario.Correo_Usu}</td>
-                    <td>${usuario.Telefono_Usu}</td>
-                    <td>${usuario.Estatus === 1 ? "Activo" : "Inactivo"}</td>
-                    <td>${usuario.Rol}</td>
-                    <td>
-                        <button class="btn btn-warning btn-sm" onclick="editarUsuario(${usuario.ID_Usuario})">Editar</button>
-                        <button class="btn btn-danger btn-sm" onclick="eliminarUsuario(${usuario.ID_Usuario})">Eliminar</button>
-                    </td>
-                `;
-
-                tabla.appendChild(fila);
-            });
-        } else {
-            console.error("Error al obtener los usuarios:", data.message);
-        }
-    } catch (error) {
-        console.error("Error al recargar la tabla de usuarios:", error);
-    }
-}
-
-// Validación del formulario Login
-function frmLogin(e) {
-    e.preventDefault();
-
-    const email = document.getElementById("inputEmail");
-    const pass = document.getElementById("inputPassword");
-    const alerta = document.getElementById("alerta");
-
-    if (email.value.trim() === "" || pass.value.trim() === "") {
-        mostrarAlerta(alerta, "Por favor, completa todos los campos.", "danger");
-        return;
-    }
-
-    const url = base_url + "Usuarios/validar";
-    const frm = document.getElementById("frmLogin");
-    const http = new XMLHttpRequest();
-
-    http.open("POST", url, true);
-    http.send(new FormData(frm));
-
-   http.onreadystatechange = function () {
-    if (this.readyState === 4) {
-        if (this.status === 200) {
-            console.log("Respuesta del servidor:", this.responseText);
-
-            try {
-                const res = JSON.parse(this.responseText);
-                console.log("Respuesta parseada:", res);
-                if (res.status === "success" && res.message === "ok") {
-                    window.location = base_url + "Usuarios";
-                } else {
-                    mostrarAlerta(alerta, res.message, "danger");
+    if (tblDireccionesElement) {
+        fetch(base_url + "Direcciones/listar")
+            .then(response => response.json())
+            .then(data => {
+                if (typeof tblDirecciones !== 'undefined') {
+                    tblDirecciones.destroy(); // Destruir la tabla si ya está inicializada
                 }
-            } catch (error) {
-                console.error("Error al procesar la respuesta del servidor:", error);
-                mostrarAlerta(alerta, "Error inesperado. Respuesta inválida del servidor.", "danger");
-            }
-        } else {
-            console.error("Error en la solicitud:", this.status, this.responseText);
-            mostrarAlerta(alerta, "Error en el servidor. Por favor, intenta más tarde.", "danger");
-        }
-    }
-};
 
-    
-    
+                tblDireccionesElement.querySelector("tbody").innerHTML = ""; // Limpiar contenido
+
+                data.forEach(direccion => {
+                    const row = `
+                        <tr>
+                            <td>${direccion.ID_Direccion}</td>
+                            <td>${direccion.nombre_est}</td>
+                            <td>${direccion.Identificador}</td>
+                            <td>${direccion.Ciudad}</td>
+                            <td>${direccion.Codigo_Postal}</td>
+                            <td>${direccion.Sector}</td>
+                            <td>${direccion.Calle}</td>
+                            <td>${direccion.Numero}</td>
+                            <td>${direccion.Cordenadas_Gps}</td>
+                            <td>${direccion.acciones}</td>
+                        </tr>`;
+                    tblDireccionesElement.querySelector("tbody").innerHTML += row;
+                });
+
+                // Inicializar de nuevo la tabla
+                tblDirecciones = new simpleDatatables.DataTable(tblDireccionesElement);
+            })
+            .catch(error => console.error("Error al cargar los datos:", error));
+    }
 }
 
+function inicializarTablaCategorias() {
+    const tblCategoriasElement = document.querySelector("#tblCategorias");
+
+    if (tblCategoriasElement) {
+        fetch(base_url + "Categorias/listar")
+            .then(response => response.json())
+            .then(data => {
+                if (typeof tblCategorias !== "undefined") {
+                    tblCategorias.destroy(); // Destruir la tabla si ya está inicializada
+                }
+
+                tblCategoriasElement.querySelector("tbody").innerHTML = ""; // Limpiar contenido
+
+                data.forEach(categoria => {
+                    const row = `
+                        <tr>
+                            <td>${categoria.ID_Categoria}</td>
+                            <td>${categoria.estado}</td>
+                            <td>${categoria.Nombre_Cat}</td>
+                            <td>${categoria.Descripcion_Cat}</td>
+                            <td>${categoria.acciones}</td>
+                        </tr>`;
+                    tblCategoriasElement.querySelector("tbody").innerHTML += row;
+                });
+
+                // Inicializar de nuevo la tabla
+                tblCategorias = new simpleDatatables.DataTable(tblCategoriasElement);
+            })
+            .catch(error => console.error("Error al cargar los datos de categorías:", error));
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////// Fin de Cargar Tablas ////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+function limpiarFormulario() {
+    document.getElementById("inputEmail").value = "";
+    document.getElementById("inputPassword").value = "";
+}
 // Mostrar modal de registro
 function frmRegistrar() {
     document.getElementById("title").innerHTML = "Nuevo Usuario";
@@ -146,7 +133,6 @@ function frmRegistrar() {
     document.getElementById("frmRegistrar").reset();
     $("#Registrar").modal("show");
 }
-
 function msgConfirmacion() {
     Swal.fire({
         position: "top-end",
@@ -156,7 +142,6 @@ function msgConfirmacion() {
         timer: 1500
     });
 }
-
 // Validación y registro de usuario
 async function RegistrarUser(e) {
     e.preventDefault();
@@ -177,19 +162,16 @@ async function RegistrarUser(e) {
         mostrarAlerta(alerta, "Por favor, completa todos los campos.", "danger");
         return;
     }
-
     // Validación del correo electrónico
     if (!esCorreoValido(correo)) {
         mostrarAlerta(alerta, "Por favor, ingresa un correo electrónico válido.", "danger");
         return;
     }
-
     // Validación de contraseñas
     if (contraseña !== confContraseña) {
         mostrarAlerta(alerta, "Las contraseñas no coinciden.", "danger");
         return;
     }
-
     try {
         const response = await fetch(base_url + "Usuarios/registrar", {
             method: "POST",
@@ -206,7 +188,7 @@ async function RegistrarUser(e) {
                 showConfirmButton: false,
                 timer: 1500,
             });
-            recargarTablaUsuarios();
+            location.reload();
             frm.reset();
             $("#Registrar").modal("hide");
         } else {
@@ -221,13 +203,11 @@ async function RegistrarUser(e) {
         });
     }
 }
-
 function esCorreoValido(correo) {
     // Expresión regular para validar un correo electrónico
     const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return regexCorreo.test(correo);
 }
- 
 function mostrarAlerta(elemento, mensaje, tipo, duracion = 3000) {
     if (!elemento) {
         console.error("Elemento no encontrado para mostrar alerta.");
@@ -251,7 +231,6 @@ function mostrarAlerta(elemento, mensaje, tipo, duracion = 3000) {
         delete elemento.timerId;
     }, duracion);
 }
-
 function limpiarAlerta(elemento) {
     if (!elemento) {
         console.error("Elemento no encontrado para limpiar alerta.");
@@ -266,7 +245,6 @@ function limpiarAlerta(elemento) {
         elemento.innerHTML = ""; // Limpia el contenido
     }, 500); // Ajusta al tiempo de transición (si usas CSS)
 }
-
 // Función para habilitar la edición al cargar un usuario
 function CargarUsuario(id) {
     fetch(`Usuarios/getUsuario/${id}`)
@@ -275,7 +253,6 @@ function CargarUsuario(id) {
             document.getElementById("rol").disabled = false; // Habilitar el select
         });
 }
-
 // Función para deshabilitar una cuenta
 function inhabilitarUsuario(id) {
     Swal.fire({
@@ -335,7 +312,7 @@ function btnDeleteUser(id) {
                                 icon: "success"
                             }).then(() => {
                                 // Aquí puedes agregar la lógica para recargar la tabla de usuarios, por ejemplo:
-                                recargarTablaUsuarios();
+                                location.reload();
                             });
                         } else {
                             Swal.fire({
@@ -357,10 +334,9 @@ function btnDeleteUser(id) {
         }
     });
 }
-
 function btnEditUser(id) {
     document.getElementById("title").innerHTML = "Editar Usuario";
-    document.getElementById("btnAccion").innerHTML = "Editar"; 
+    document.getElementById("btnAccion").innerHTML = "Editar";
     document.getElementById("btnAccion").setAttribute("data-action", "editar");
     document.getElementById("Est").disabled = false;
     const url = base_url + "Usuarios/editar/" + id;
@@ -383,7 +359,6 @@ function btnEditUser(id) {
         }
     };
 }
-
 function handleAction(e) {
     const action = document.getElementById("btnAccion").getAttribute("data-action");
     if (action === "registrar") {
@@ -392,16 +367,15 @@ function handleAction(e) {
     } else if (action === "editar") {
         //console.log("Editando");
         EditarUser(e);
-        
+
     }
 }
-
 async function EditarUser(e) {
     e.preventDefault();
 
     const alerta = document.getElementById("alerta");
     const frm = document.getElementById("frmRegistrar");
-    
+
     const id = document.getElementById("id").value.trim();
     const rol = document.getElementById("Rol").value.trim();
     const est = document.getElementById("Est").value.trim();
@@ -409,9 +383,9 @@ async function EditarUser(e) {
     const apellido = document.getElementById("inputApellido").value.trim();
     const correo = document.getElementById("inputCorreo").value.trim();
     const telefono = document.getElementById("inputTelefono").value.trim();
-     
+
     // Validación de campos vacíos
-    if (!nombre || !apellido || !correo || !telefono || !est || !id || !rol || !est ) {
+    if (!nombre || !apellido || !correo || !telefono || !est || !id || !rol || !est) {
         mostrarAlerta(alerta, "Por favor, completa todos los campos.", "danger");
         return;
     }
@@ -438,7 +412,7 @@ async function EditarUser(e) {
                 showConfirmButton: false,
                 timer: 1500,
             });
-            recargarTablaUsuarios();
+            location.reload();
             frm.reset();
             $("#Registrar").modal("hide");
         } else {
@@ -453,7 +427,493 @@ async function EditarUser(e) {
         });
     }
 }
-
 function cerrarModal(modalId) {
     $(`#${modalId}`).modal('hide');
+}
+////////////////////////////////////////////////////////
+////////////// Fin Funciones de Usuarios  //////////////
+////////////////////////////////////////////////////////
+
+// Mostrar modal de registro Direcciones
+function frmDirecciones() {
+    document.getElementById("title").innerHTML = "Registrar Nueva Direccion";
+    document.getElementById("btnAccionDir").innerHTML = "Registrar";
+    document.getElementById("btnAccionDir").setAttribute("data-action", "registrardir");
+
+    document.getElementById("frmDirecciones").reset();
+    $("#modalDirecciones").modal("show");
+    initMap();
+}
+
+// Validación y registro
+async function RegistrarDireccion(e) {
+    e.preventDefault();
+
+    const frm = document.getElementById("frmDirecciones");
+    const alerta = document.getElementById("alerta");
+
+    const ID_Usuario = document.getElementById("id_usu").value.trim();
+    const Identificador = document.getElementById("inputIdentificador").value.trim();
+    const Ciudad = document.getElementById("inputCiudad").value.trim();
+    const CodigoPostal = document.getElementById("inputCodigoPostal").value.trim();
+    const Calle = document.getElementById("inputCalle").value.trim();
+    const Numero = document.getElementById("inputNumero").value.trim();
+    const Sector = document.getElementById("inputSector").value.trim();
+    const CordenadasGPS = document.getElementById("inputCordenadasGPS").value.trim();
+
+    // Validación de campos vacíos
+    if (!ID_Usuario || !Identificador || !Ciudad || !CodigoPostal || !Calle || !Numero || !Sector || !CordenadasGPS) {
+        mostrarAlerta(alerta, "Por favor, completa todos los campos.", "danger");
+        return;
+    }
+
+    const formData = new FormData(frm);
+
+    /*  // Imprimir cada dato del formulario en la consola
+     console.log("Datos enviados:");
+     for (const pair of formData.entries()) {
+         console.log(`${pair[0]}: ${pair[1]}`);
+     } */
+
+    try {
+        const response = await fetch(base_url + "Direcciones/registrarDireccion", {
+            method: "POST",
+            body: formData,
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const text = await response.text();
+
+        let res;
+        try {
+            res = JSON.parse(text);
+        } catch (error) {
+            console.error("La respuesta no es JSON válida:", text);
+            throw new Error("El servidor no devolvió un JSON válido");
+        }
+
+        if (res.status === "success") {
+            Swal.fire({
+                icon: "success",
+                title: "¡Éxito!",
+                text: "Dirección registrada con éxito.",
+                showConfirmButton: false,
+                timer: 10000,
+            });
+            location.reload();
+            frm.reset();
+            $("#modalDirecciones").modal("hide");
+        } else {
+            mostrarAlerta(alerta, res.message || "Ocurrió un problema.", "danger");
+        }
+    } catch (error) {
+        console.error("Error en la solicitud:", error);
+        Swal.fire({
+            icon: "error",
+            title: "Error inesperado",
+            text: "Ocurrió un problema al procesar la solicitud.",
+        });
+    }
+}
+
+function handleActionDir(e) {
+    const action = document.getElementById("btnAccionDir").getAttribute("data-action");
+    if (action === "registrardir") {
+        console.log("Registrando");
+        RegistrarDireccion(e);
+    } else if (action === "editardir") {
+        console.log("Editando 2");
+        EditarDireccion(e);
+    }
+}
+
+function btnEditDir(ID_Direccion) {
+    initMap();
+    document.getElementById("title").innerHTML = "Editar Dirección";
+    document.getElementById("btnAccionDir").innerHTML = "Editar";
+    document.getElementById("btnAccionDir").setAttribute("data-action", "editardir");
+    const url = base_url + "Direcciones/editar/" + ID_Direccion;
+    const http = new XMLHttpRequest();
+    http.open("GET", url, true);
+    http.send();
+    http.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+            console.log(this.responseText);
+            const res = JSON.parse(this.responseText);
+            document.getElementById("id_dir").value = res.ID_Direccion; // Cargar el estado en el input oculto del form
+            document.getElementById("id_usu").value = res.ID_Usuario; // Cargar el estado en el input oculto del form
+            document.getElementById("id_Est").value = res.Estado; // Cargar el estado en el input oculto del form
+            document.getElementById("inputIdentificador").value = res.Identificador; // Cargar el identificador en el input
+            document.getElementById("inputCiudad").value = res.Ciudad; // Cargar la ciudad en el input
+            document.getElementById("inputCodigoPostal").value = res.Codigo_Postal; // Cargar el código postal en el input
+            document.getElementById("inputSector").value = res.Sector; // Cargar el sector en el input
+            document.getElementById("inputCalle").value = res.Calle; // Cargar la calle en el input
+            document.getElementById("inputNumero").value = res.Numero; // Cargar el número en el input
+            document.getElementById("inputCordenadasGPS").value = res.Cordenadas_Gps; // Cargar las coordenadas GPS en el input
+            $("#modalDirecciones").modal("show"); // Abrir el modal
+        }
+    };
+}
+
+async function EditarDireccion(e) {
+    e.preventDefault();
+
+    const alerta = document.getElementById("alerta");
+    const frm = document.getElementById("frmDirecciones");
+
+    const idDireccion = document.getElementById("id_dir").value.trim();
+    const idUsuario = document.getElementById("id_usu").value.trim();
+    const estado = document.getElementById("id_Est").value.trim();
+    const identificador = document.getElementById("inputIdentificador").value.trim();
+    const ciudad = document.getElementById("inputCiudad").value.trim();
+    const codigoPostal = document.getElementById("inputCodigoPostal").value.trim();
+    const sector = document.getElementById("inputSector").value.trim();
+    const calle = document.getElementById("inputCalle").value.trim();
+    const numero = document.getElementById("inputNumero").value.trim();
+    const cordenadasGps = document.getElementById("inputCordenadasGPS").value.trim();
+
+    // Validación de campos vacíos
+    if (!idDireccion || !idUsuario || !estado || !identificador || !ciudad || !codigoPostal || !sector || !calle || !numero || !cordenadasGps) {
+        mostrarAlerta(alerta, "Por favor, completa todos los campos.", "danger");
+        return;
+    }
+
+    try {
+        const response = await fetch(base_url + "Direcciones/editarDireccion", { // función para guardar los datos a editar
+            method: "POST",
+            body: new FormData(frm),
+        });
+
+        const res = await response.json();
+
+        if (res.status === "success") {
+            Swal.fire({
+                icon: "success",
+                title: "¡Éxito!",
+                text: "Dirección editada con éxito.",
+                showConfirmButton: false,
+                timer: 1500,
+            });
+            location.reload();
+            frm.reset();
+            $("#modalDirecciones").modal("hide");
+        } else {
+            mostrarAlerta(alerta, res.message || "Ocurrió un problema.", "danger");
+        }
+    } catch (error) {
+        console.error("Error en la solicitud:", error);
+        Swal.fire({
+            icon: "error",
+            title: "Error inesperado",
+            text: "Ocurrió un problema al procesar la solicitud.",
+        });
+    }
+}
+
+// Boton para usar la funcion deshabilitar una cuenta
+function btnInavDir(ID_Direccion) {
+    Swal.fire({
+        title: "¿Estás seguro?",
+        text: "¡Esta Seguro de inhabilitar  !",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Sí, inhabilítar",
+        cancelButtonText: "Cancelar"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Llamar a la función para cargar las direcciones del usuario
+            fetch(base_url + "Direcciones/listar")
+                .then(response => response.json())
+                .then(data => {
+                    // Crear un objeto de opciones para el select
+                    const inputOptions = {};
+                    data.forEach(direccion => {
+                        inputOptions[direccion.ID_Direccion] = direccion.Identificador;
+                    });
+
+                    // Solicitar al usuario que seleccione una nueva dirección para activar
+                    Swal.fire({
+                        title: "Selecciona una nueva dirección para activar",
+                        input: "select",
+                        inputOptions: inputOptions,
+                        inputPlaceholder: "Selecciona una dirección",
+                        showCancelButton: true,
+                        inputValidator: (value) => {
+                            return new Promise((resolve) => {
+                                if (value) {
+                                    resolve();
+                                } else {
+                                    resolve("Debes seleccionar una dirección");
+                                }
+                            });
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            const nuevaDireccionID = result.value;
+                            const url = base_url + "Direcciones/inhabilitar";
+                            const http = new XMLHttpRequest();
+                            http.open("POST", url, true);
+                            http.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                            http.send("ID_Direccion=" + ID_Direccion + "&NuevaDireccionID=" + nuevaDireccionID);
+
+                            http.onreadystatechange = function () {
+                                if (this.readyState == 4 && this.status == 200) {
+                                    try {
+                                        const res = JSON.parse(this.responseText); // Analizar la respuesta JSON
+                                        console.log("Respuesta del backend:", res);
+
+                                        if (res.status === "success") {
+                                            Swal.fire({
+                                                title: "Inhabilitado",
+                                                text: "La dirección ha sido inhabilitada y la nueva dirección ha sido activada.",
+                                                icon: "success"
+                                            }).then(() => {
+                                                // Aquí puedes agregar la lógica para recargar la tabla de direcciones, por ejemplo:
+                                                location.reload();
+                                            });
+                                        } else {
+                                            Swal.fire({
+                                                title: "Error",
+                                                text: "Error al inhabilitar.",
+                                                icon: "error"
+                                            });
+                                        }
+                                    } catch (error) {
+                                        console.error("Error al procesar la respuesta del backend:", error);
+                                        Swal.fire({
+                                            title: "Error inesperado",
+                                            text: "Ocurrió un problema al procesar la respuesta del servidor.",
+                                            icon: "error"
+                                        });
+                                    }
+                                }
+                            };
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error("Error al cargar las direcciones:", error);
+                    Swal.fire({
+                        title: "Error inesperado",
+                        text: "Ocurrió un problema al cargar las direcciones.",
+                        icon: "error"
+                    });
+                });
+        }
+    });
+}
+/////////////////////////////////////////////////////////
+///////// Fin Funciones de la tabla direccion  //////////
+/////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////
+//////////////////API GoogleMaps//////////////////////
+//////////////////////////////////////////////////////
+let map;
+let marker;
+
+function initMap() {
+    map = new google.maps.Map(document.getElementById('map'), {
+        center: { lat: -34.397, lng: 150.644 },
+        zoom: 8
+    });
+
+    map.addListener('click', function (event) {
+        placeMarker(event.latLng);
+    });
+}
+
+function placeMarker(location) {
+    if (marker) {
+        marker.setPosition(location);
+    } else {
+        marker = new google.maps.Marker({
+            position: location,
+            map: map
+        });
+    }
+    document.getElementById('inputCordenadasGPS').value = location.lat() + ', ' + location.lng();
+}
+
+window.initMap = initMap;
+//////////////////////////////////////////////////////
+/////////////////Fin API Google///////////////////////
+//////////////////////////////////////////////////////
+
+// Detecta el clic en el botón "Editar" o la fila
+document.addEventListener("click", function (e) {
+    if (e.target.classList.contains("cargar-datos")) {
+        // Obtén la fila donde ocurrió el clic
+        const fila = e.target.closest("tr");
+
+        // Extrae los valores de las celdas (puedes usar querySelector con clases específicas)
+        const id = fila.getAttribute("data-id");
+        const estado = fila.querySelector(".estado").textContent.trim();
+        const nombre = fila.querySelector(".nombre").textContent.trim();
+        const descripcion = fila.querySelector(".descripcion").textContent.trim();
+
+        // Asigna los valores a los inputs
+        document.getElementById("Inputid_est").value = id;
+        document.getElementById("InputNombre").value = nombre;
+        document.getElementById("InputDescripcion").value = descripcion;
+    }
+});
+
+
+// Cambiar el nombre al boton si se va a editar categoria
+function btnECategoria() {
+    document.getElementById("title").innerHTML = "Editar Categoria";
+    document.getElementById("btnAccionCat").innerHTML = "Modificar";
+    document.getElementById("btnAccionCat").setAttribute("data-action", "editarcat");
+    const url = base_url + "Categorias/editar/" + ID_Direccion;
+    const http = new XMLHttpRequest();
+    http.open("GET", url, true);
+    http.send();
+    http.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+            console.log(this.responseText);
+            const res = JSON.parse(this.responseText);
+            document.getElementById("id_cat").value = res.id; // Cargar el id en el input oculto del form
+            document.getElementById("id_est").value = res.Estado; // Cargar el estado en el input oculto del form
+            document.getElementById("inputNombre").value = res.Nombre; // Cargar el nombreen el input
+            document.getElementById("inputDescripcion").value = res.Descripcion; // Cargar la descripcion en el input
+        }
+    };
+}
+
+async function RegistrarCategoria(e) {
+    e.preventDefault();
+
+    const alerta = document.getElementById("alerta");
+    const Id_vendedor = document.getElementById("Inputid_empresa").value.trim();
+    const Id_estatus = document.getElementById("Inputid_est").value.trim();
+    const nombre = document.getElementById("inputNombre").value.trim();
+    const descricion = document.getElementById("inputDescricion").value.trim();
+
+    // Validación de campos vacíos
+    if (!Id_vendedor || !Id_estatus || !nombre || !descricion) {
+        mostrarAlerta(alerta, "Por favor, completa todos los campos.", "danger");
+        return;
+    }
+
+    const formData = new FormData(frm);
+
+    // Imprimir cada dato del formulario en la consola
+    console.log("Datos enviados:");
+    for (const pair of formData.entries()) {
+        console.log(`${pair[0]}: ${pair[1]}`);
+    }
+
+    try {
+        const response = await fetch(base_url + "Categorias/registrarCategoria", {
+            method: "POST",
+            body: formData,
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const text = await response.text();
+
+        let res;
+        try {
+            res = JSON.parse(text);
+        } catch (error) {
+            console.error("La respuesta no es JSON válida:", text);
+            throw new Error("El servidor no devolvió un JSON válido");
+        }
+
+        if (res.status === "success") {
+            Swal.fire({
+                icon: "success",
+                title: "¡Éxito!",
+                text: "Categoria registrada con exito.",
+                showConfirmButton: false,
+                timer: 10000,
+            });
+            location.reload();
+            frm.reset();
+        } else {
+            mostrarAlerta(alerta, res.message || "Ocurrió un problema.", "danger");
+        }
+    } catch (error) {
+        console.error("Error en la solicitud:", error);
+        Swal.fire({
+            icon: "error",
+            title: "Error inesperado",
+            text: "Ocurrió un problema al procesar la solicitud.",
+        });
+    }
+}
+
+function handleActionCat(e) {
+    const action = document.getElementById("btnAccionCat").getAttribute("data-action");
+    if (action === "editarcat") {
+        console.log("Editando");
+        //handleActionDir(e);
+    } else {
+        console.log("Registrando");
+        //btnEditCategoria(e);
+    }
+}
+
+// Boton para usar la funcion deshabilitar una cuenta
+function btnInavCategoria(id) {
+    Swal.fire({
+        title: "¿Estás seguro?",
+        text: "¡Esta categoria ya no podra ser usada en otros productos!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Sí, inhabilítar",
+        cancelButtonText: "Cancelar"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const url = base_url + "Categorias/inhabilitar";
+            const http = new XMLHttpRequest();
+            http.open("POST", url, true);
+            http.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            http.send("ID_Categoria=" + id);
+
+            http.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    try {
+                        const res = JSON.parse(this.responseText); // Analizar la respuesta JSON
+                        console.log("Respuesta del backend:", res);
+
+                        if (res.status === "success") {
+                            Swal.fire({
+                                title: "Inhabilitado",
+                                text: "La categoria ha sido inhabilitado.",
+                                icon: "success"
+                            }).then(() => {
+                                // Aquí puedes agregar la lógica para recargar la tabla de usuarios, por ejemplo:
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                title: "Error",
+                                text: "Error al inhabilitar categoria.",
+                                icon: "error"
+                            });
+                        }
+                    } catch (error) {
+                        console.error("Error al procesar la respuesta del backend:", error);
+                        Swal.fire({
+                            title: "Error inesperado",
+                            text: "Ocurrió un problema al procesar la respuesta del servidor.",
+                            icon: "error"
+                        });
+                    }
+                }
+            };
+        }
+    });
 }

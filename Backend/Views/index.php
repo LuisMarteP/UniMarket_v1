@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
     <head>
         <meta charset="utf-8" />
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -74,6 +74,6 @@
         <script>
             const base_url = "<?php echo base_url; ?>";
         </script>
-        <script src="<?php echo base_url;?>Backend/Assets/js/funciones.js"></script>
+        <script src="<?php echo base_url;?>Backend/Assets/js/login.js"></script>
     </body>
 </html>

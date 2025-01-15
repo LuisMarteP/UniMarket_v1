@@ -10,23 +10,25 @@ class UsuariosModel extends Query
         $this->conn = (new Conexion())->conect();
     }
 
-    public function validarUsuario(string $email, string $password)
+    public function validarUsuario($email)
     {
-        $sql = "CALL ValidarUsuario(?, ?, @p_resultado, @p_id_usuario, @p_nombre, @p_rol)";
-        $stmt = $this->conn->prepare($sql);
-
         try {
-            // Ejecutar el procedimiento almacenado
-            $stmt->execute([$email, $password]);
+            $query = "SELECT * FROM usuarios WHERE Correo_Usu = :email LIMIT 1";
+            $stmt = $this->conn->prepare($query); // Preparar la consulta SQL
+            $stmt->bindParam(':email', $email, PDO::PARAM_STR); // Vincular el parámetro
+            $stmt->execute(); // Ejecutar la consulta
+            $result = $stmt->fetch(PDO::FETCH_ASSOC); // Obtener el resultado como un array asociativo
 
-            // Obtener los resultados de las variables OUT
-            $resultQuery = $this->conn->query("SELECT @p_resultado AS resultado, @p_id_usuario AS id_usuario, @p_nombre AS nombre, @p_rol AS rol");
-            $result = $resultQuery->fetch(PDO::FETCH_ASSOC);
+            if (!$result) {
+                // Si no se encuentra el usuario, devolver false
+                error_log("Usuario no encontrado con email: $email");
+                return false;
+            }
 
-            return $result;
+            return $result; // Devolver los datos del usuario
         } catch (PDOException $e) {
-            error_log("Error al validar usuario: " . $e->getMessage());
-            return null;
+            error_log("Error en validarUsuario: " . $e->getMessage());
+            return false;
         }
     }
 
@@ -44,6 +46,7 @@ class UsuariosModel extends Query
         $data = $this->selectAll($sql);
         return $data;
     }
+    
     public function getUsuarios()
     {
         $sql = "CALL CargarUsuarios()";

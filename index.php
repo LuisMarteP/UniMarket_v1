@@ -1,15 +1,22 @@
 <?php 
 require_once "Backend/Config/Config.php";
-$ruta = isset($_GET['url']) && !empty($_GET['url']) ? htmlspecialchars($_GET['url']) : "Home/index";
-//$ruta = isset($_GET['url']) && !empty($_GET['url']) ? htmlspecialchars($_GET['url']) : "Home/index";
+
+// Redirigir a la página principal del frontend si no se especifica una ruta
+if (!isset($_GET['url']) || empty($_GET['url'])) {
+    header("Location: Frontend");
+    exit();
+}
+
+$ruta = htmlspecialchars($_GET['url']);
 $array = explode("/", $ruta);
 $controller = $array[0];
 $metodo = "index";
 $parametro = "";
+
 if (!empty($array[1])) {
-   if (!empty($array[1] != "")){
-    $metodo = $array[1];
-   }
+    if (!empty($array[1] != "")){
+        $metodo = $array[1];
+    }
 }
 if (!empty($array[2])){
     if (!empty($array[2] != "")){
@@ -31,9 +38,7 @@ if (file_exists($dircontrollers)){
     } else {
         echo "No existe el metodo";
     } 
-}  else { 
-echo "No existe el controlador";
+} else { 
+    echo "No existe el controlador";
 }
-
 ?>
-

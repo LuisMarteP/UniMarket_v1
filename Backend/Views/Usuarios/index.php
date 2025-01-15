@@ -22,8 +22,7 @@ include "Backend/Views/Templates/header.php"; ?>
             <th>Fecha Registro</th>
             <th>Notificaciones</th>
             <th>Terminos</th>
-            <th>Editar</th>
-            <th>Inhabilitar</th>
+            <th></th>
         </tr>
 
     </thead>

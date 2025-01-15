@@ -11247,3 +11247,7 @@ input[type="search"] {
   -webkit-appearance: none;
   appearance: none; /* Propiedad estándar */
 }
+ /*Estilo para la pagina caracteristicas*/
+.tab-content {
+  margin-top: 20px;
+}
